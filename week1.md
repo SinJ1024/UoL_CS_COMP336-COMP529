@@ -123,13 +123,19 @@ Scale-free networks are a type of network characterised by a power-law degree di
 
 #### 2.3 Unsupervised Learning
 PCA and Clustering...
+
 一碗冷饭炒三年
 
 #### 2.4 Supervised Learning
 SVM...
+
 What can I say...
+
 Mamb...
-If COMP336 contains SVM 
+
+If COMP336 teach the proof of SVM and mathematical implement, even the source code.
+
+I would say you are the god.
 
 #### 2.5 NLP
 I don't have any NLP experiences and knowledges before, looking forward!
