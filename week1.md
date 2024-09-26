@@ -1,5 +1,4 @@
 # COMP 336 Note
-$This\ note\ is\ d$
 
 ## Week1 : overview
 First week means relax...
