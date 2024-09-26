@@ -11,10 +11,13 @@ Mainly overview and intro
 ### 1. Intro 
 Big Data... I don't like this name, it is not strict and clear.
 But it might be most suitable name for a large scale field...
+
 Otherwise...
+
 Massive Heterogeneous Fast Confidence Flex... Data :(
 
-From My Prospective:
+From My Prospective: 
+
 Big data is a procedure which mapping informations from our real world space to a abstruct math space, and use some traditional statistical method/ ML method/ simple excel way to extract  features in these Massive Heterogeneous Fast Confidence Flex... Data. Use these features and relations among different features to optimize decisions.
 
 #### 1.1 Characteristics of Big Data:
@@ -57,68 +60,109 @@ Overall: 数据格式不同，分为结构数据和非结构数据
 Overall: 真实性(准确性, 质量和置信度)
 
 ##### 1.1.6 Value:
+
 1. Value refers to the insights and actionable information extracted from big data.
+   
 2. Big data is often valuable if it can be transformed into meaningful insights
+   
 3. A range of techniques to extract value from big data, including: machine learning; statistical analysis; natural language processing; network science; signal processing.
 
 Overall: 数据中可提取到的价值
 
 ##### 1.1.7 Variability:
+
 1. Variability refers to the changing nature of data and the inconsistency in its flow.
+   
 2. Data can be generated at unpredictable rates and can vary in its meaning and relevance.
+   
 3. Handling variability requires adaptive algorithms and real-time monitoring to respond quickly to data changes
 
 Overall: 可变性，adaptive algorithms 确保应对不同的数据类型、生成速度都可以handle.
 
 #### 1.2 Dataset Representations:
+
 Big datasets come in various shapes and sizes. We tend to think about matrices of variables and samples, even when the data isn’t originally presented to us.
+
 ##### 1.2.1 Tall and Wide Dataset
+
 These datasets can be very large: millions to billions variables and samples.
+
 Column is Samples, Row is Variables
+
 Example: Social networks, contagion networks...
 
 ##### 1.2.2 Tall Datasets
+
 Hundreds to thousands of variables
+
 Thousands to milllions of samples
+
 Often suitable for ML (training set is big and less parameters, easy to build model and training)
+
 Examples: NLP, Image databases, Scientific-computing, RL
 
 ##### 1.2.3 Wide Datasets
+
 Thousands to millions of variables
+
 Hundreds to thousands of samples
+
 Variables $\gg$ Samples
+
 Example: Genomocs Datasets, Document modeling
 
 ##### 1.2.4 Streaming Datasets
+
 Samples continually created in real time.
+
 Example: Sensor data, Social media feeds, Financial data.
 
 ##### 1.2.5 Dense vs Sparse Matrix
+
 1. Dense Matrix:
+   
    1.1 if most of the elements are non-zero, the matrix is considered dense
+   
    1.2 All elements are stored, including the zeroes
+   
    1.3 Memory usage is proportional to the total number of elements(Quite a smart way to define dense matrix under computer science view)
-2. Sparse Matrix:
+   
+3. Sparse Matrix:
+4. 
    2.1 By contrast, the number of non-zero elements is roughly equal to the number of rows or columns.
+   
    2.2 Only non-zero elements are stored, often as a coordinate list, which stores triplets (row, column, value)
+   
    2.3 Memory usage is proportional to the number of non-zero elements
 
 ### 2. Course Overview
 #### 2.1 Big Data Middleware
+
 Datasets in big data are typically too large to be processed on a single computer, so software has been developed to process such datasets across multiple computers in a data centre. The software is called _**big data middleware**_
 2 most popular open source big data middleware framework:
+
 1. Hadoop: based on Google’s MapReduce and Google File System papers
+   
    1.1 HDFS(Hadoop Distributed File System): A scalable and fault-tolerant file storage system. The Hadoop Distributed File System (HDFS) provides scalable, fault-tolerant data storage
+   
    1.2: HDFS splits large files into blocks and distributes them across multiple machines for parallel storage and retrieval
+
    1.3 MapReduce:  programming model for processing large datasets in parallel. Performs fairly simple operations (map and reduce) at huge scales
+   
 2. Spark:
+ 
    2.1 Spark was developed after Hadoop to address some of its perceived limitations
+
    2.2 often faster than Hadoop (due to a more sophisticated use of RAM on cluster nodes), and can perform a broader range of tasks
+
    2.3 Spark’s MLLib library supports a wide range of machine learning algorithms, and GraphX lib enables complex graph computations
    
 #### 2.2 Network Science
+
 Network Science studies the structure, dynamics, and behaviour of networks
+
 Use graph theory((un)directional graph or adjacency matrix) to represent network and relations.
+
 Scale-free networks are a type of network characterised by a power-law degree distribution, in these networks, most nodes have few connections, while a few nodes (called "hubs") have many connections
 
 #### 2.3 Unsupervised Learning
@@ -138,11 +182,14 @@ If COMP336 teach the proof of SVM and mathematical implement, even the source co
 I would say you are the god.
 
 #### 2.5 NLP
+
 I don't have any NLP experiences and knowledges before, looking forward!
 
 #### 2.6 Bayes Stat and Filters
+
 I love math, specially mathematical analysis, some algebra and conbinatorics things.
 Uhmmm, statistic....
+
 Not bad, at least better than software dev.
 
 
