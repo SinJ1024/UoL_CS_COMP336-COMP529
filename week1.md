@@ -2,7 +2,9 @@
 
 ## Week1 : overview
 First week means relax...
+
 Only 2 hours lesson in Monday
+
 Mainly overview and intro
 
 
@@ -14,8 +16,10 @@ Massive Heterogeneous Fast Confidence Flex... Data :(
 
 From My Prospective:
 Big data is a procedure which mapping informations from our real world space to a abstruct math space, and use some traditional statistical method/ ML method/ simple excel way to extract  features in these Massive Heterogeneous Fast Confidence Flex... Data. Use these features and relations among different features to optimize decisions.
+
 #### 1.1 Characteristics of Big Data:
 Big data comes in many shapes and sizes, but it can be characterised in 6 Vs
+
 ##### 1.1.1 6 Vs' definition
 1. Volume: the amount of data in a given dataset. --数据集大
 2. Velocity: Data can be generated at a range of possible speeds. --产生快
@@ -23,6 +27,7 @@ Big data comes in many shapes and sizes, but it can be characterised in 6 Vs
 4. Veracity: Data quality and accuracy can vary. --准确性和质量不同
 5. Value: which derives from the ability to transform big data into actionable insights. --可以通过数据得到可用于指导实际决策和行动的价值？
 6. Variability: Data can be inconsistent or change rapidly. --数据不一致or千变万化
+
 ##### 1.1.2 Volume:
 1. Volume refers to the quantity of data
 2. Ranges from GBs upwards
@@ -110,39 +115,34 @@ Datasets in big data are typically too large to be processed on a single compute
    2.1 Spark was developed after Hadoop to address some of its perceived limitations
    2.2 often faster than Hadoop (due to a more sophisticated use of RAM on cluster nodes), and can perform a broader range of tasks
    2.3 Spark’s MLLib library supports a wide range of machine learning algorithms, and GraphX lib enables complex graph computations
+   
 #### 2.2 Network Science
 Network Science studies the structure, dynamics, and behaviour of networks
 Use graph theory((un)directional graph or adjacency matrix) to represent network and relations.
 Scale-free networks are a type of network characterised by a power-law degree distribution, in these networks, most nodes have few connections, while a few nodes (called "hubs") have many connections
+
 #### 2.3 Unsupervised Learning
 PCA and Clustering...
 一碗冷饭炒三年
+
 #### 2.4 Supervised Learning
 SVM...
 What can I say...
 Mamb...
 If COMP336 contains SVM 
+
 #### 2.5 NLP
+I don't have any NLP experiences and knowledges before, looking forward!
 
 #### 2.6 Bayes Stat and Filters
+I love math, specially mathematical analysis, some algebra and conbinatorics things.
+Uhmmm, statistic....
+Not bad, at least better than software dev.
 
 
 
 
-### 2. Network Representations(Graph)
-use (un)directional graph or adjacency matrix to represent relations
-#### 2.1 Scale-Free Network
-1. SFNare a type of network characterused by a power -law degree distribution
-
-### 3. Unsupervised Learning
-#### 3.1 PCA and Clustering
-继续炒冷饭
-
-### 4. Supervised Learning
-KNN SVM......
-如果能到functional analysis的层面证明并实现SVM，那就不换课了
-NLP
-
+### $End.$
 
 
 
