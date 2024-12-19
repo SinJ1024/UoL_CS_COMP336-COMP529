@@ -1,0 +1,842 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\title{Week 1 - 3 Lecture Note (Big Data, GFS \& Hadoop, MapReduce, Spark)}
+\author{Jingyuan Sun \\ ChatGPT \ Claude}
+\date{September, 2024}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+This lecture focuses on middleware for big data analysis, which allows us to work with very large datasets by utilizing distributed systems. The main topics include Google File System (GFS), Google MapReduce, and their open-source equivalents Hadoop and HDFS.
+
+\subsection{Characteristics of Big Data}
+Big data is defined by several key characteristics, often summarized as the 6Vs. These characteristics highlight the unique challenges and opportunities presented by big data:
+
+\begin{itemize}
+    \item \textbf{Volume}: Refers to the amount of data in a given dataset. Big data often involves datasets that range from gigabytes to petabytes or more, requiring distributed storage and processing.
+    \item \textbf{Velocity}: Denotes the speed at which data is generated, processed, and analyzed, with some applications requiring real-time processing.
+    \item \textbf{Variety}: Represents the diversity of data types and formats, including structured, semi-structured, and unstructured data.
+    \item \textbf{Veracity}: Highlights the accuracy, quality, and trustworthiness of data, which can vary significantly across sources.
+    \item \textbf{Value}: Refers to the actionable insights and meaningful information that can be extracted from big data to support decision-making.
+    \item \textbf{Variability}: Addresses the dynamic and inconsistent nature of data, including changes in its flow, meaning, and relevance.
+\end{itemize}
+
+\subsubsection{Volume}
+Volume refers to the quantity of data in a dataset, often measured in gigabytes or larger units. 
+
+\begin{itemize}
+    \item \textbf{Definition}: The amount of data in a given dataset.
+    \item \textbf{Details}: Data size ranges from gigabytes to petabytes or beyond, depending on the application.
+    \item \textbf{Summary}: Volume represents the sheer size of data, necessitating efficient storage and retrieval mechanisms.
+\end{itemize}
+
+\subsubsection{Velocity}
+Velocity refers to the speed at which data is being generated, processed, and analyzed.
+
+\begin{itemize}
+    \item \textbf{Definition}: The speed at which data is generated and handled.
+    \item \textbf{Details}: Data in many applications arrives continuously and needs to be processed in real time.
+    \item \textbf{Examples}: Stock trading platforms and autonomous vehicles.
+    \item \textbf{Summary}: Velocity highlights the need for real-time systems to handle the rapid pace of data generation and processing.
+\end{itemize}
+
+\subsubsection{Variety}
+Variety refers to the wide range of data types and formats.
+
+\begin{itemize}
+    \item \textbf{Definition}: Data diversity in terms of type and format.
+    \item \textbf{Details}: Includes structured data (e.g., databases, spreadsheets) and unstructured data (e.g., videos, social media posts, emails).
+    \item \textbf{Summary}: Variety emphasizes the need for systems capable of handling both structured and unstructured data.
+\end{itemize}
+
+\subsubsection{Veracity}
+Veracity refers to the accuracy, quality, and trustworthiness of data.
+
+\begin{itemize}
+    \item \textbf{Definition}: The reliability and quality of data.
+    \item \textbf{Details}: Data can be noisy, incomplete, or inconsistent, requiring cleaning and validation.
+    \item \textbf{Examples}: Social media data can be biased or misleading; sensor data may contain noise or errors.
+    \item \textbf{Improvement Techniques}: Data cleaning and data validation are critical for enhancing veracity.
+    \item \textbf{Summary}: Veracity deals with ensuring data quality before analysis.
+\end{itemize}
+
+\subsubsection{Value}
+Value refers to the actionable insights that can be extracted from big data.
+
+\begin{itemize}
+    \item \textbf{Definition}: The ability to transform big data into meaningful insights.
+    \item \textbf{Details}: Extracting value requires techniques such as machine learning, statistical analysis, and natural language processing.
+    \item \textbf{Summary}: Value focuses on the benefits derived from big data for decision-making and strategic planning.
+\end{itemize}
+
+\subsubsection{Variability}
+Variability refers to the dynamic nature of data and its inconsistencies.
+
+\begin{itemize}
+    \item \textbf{Definition}: The changing and inconsistent nature of data.
+    \item \textbf{Details}: Data may vary in its flow rate, meaning, and relevance over time.
+    \item \textbf{Challenges}: Handling variability requires adaptive algorithms and real-time monitoring to ensure systems remain effective.
+    \item \textbf{Summary}: Variability underscores the need for systems to adapt to changes in data patterns and flows.
+\end{itemize}
+
+\subsection{Dataset Representations}
+Big datasets come in various shapes and sizes. While data can be represented in multiple ways, we often conceptualize it as matrices of variables and samples, even when the data is not originally presented in this format.
+
+\subsubsection{1.2.1 Tall and Wide Datasets}
+These datasets are characterized by their immense size, often containing millions to billions of variables and samples.
+
+\begin{itemize}
+    \item \textbf{Structure}: Columns represent samples, and rows represent variables.
+    \item \textbf{Examples}: Social networks, contagion networks, and other large-scale relational datasets.
+    \item \textbf{Challenge}: Handling both computational and storage requirements for processing and analyzing such datasets.
+\end{itemize}
+
+\subsubsection{1.2.2 Tall Datasets}
+Tall datasets are characterized by a large number of samples and a relatively small number of variables.
+
+\begin{itemize}
+    \item \textbf{Structure}: Hundreds to thousands of variables and thousands to millions of samples.
+    \item \textbf{Suitability for ML}: Ideal for machine learning tasks, as they provide a large training set with fewer parameters, enabling easier model building and training.
+    \item \textbf{Examples}: Natural Language Processing (NLP), image databases, scientific computing, and reinforcement learning (RL).
+\end{itemize}
+
+\subsubsection{1.2.3 Wide Datasets}
+Wide datasets are characterized by a large number of variables relative to the number of samples.
+
+\begin{itemize}
+    \item \textbf{Structure}: Thousands to millions of variables and hundreds to thousands of samples.
+    \item \textbf{Key Feature}: Variables $\gg$ Samples, often leading to challenges in model overfitting and dimensionality reduction.
+    \item \textbf{Examples}: Genomics datasets and document modeling.
+\end{itemize}
+
+\subsubsection{1.2.4 Streaming Datasets}
+Streaming datasets are generated continuously in real time, often requiring immediate processing.
+
+\begin{itemize}
+    \item \textbf{Definition}: Samples are created continuously, often with no predefined endpoint.
+    \item \textbf{Examples}: Sensor data, social media feeds, and financial data streams.
+    \item \textbf{Challenge}: Requires systems capable of real-time ingestion, processing, and storage.
+\end{itemize}
+
+\subsubsection{1.2.5 Dense vs Sparse Matrices}
+Data matrices can also be categorized based on their density, which affects storage and computational efficiency.
+
+\paragraph{Dense Matrices}
+\begin{itemize}
+    \item \textbf{Definition}: A matrix is dense if most of its elements are non-zero.
+    \item \textbf{Storage}: All elements, including zeros, are stored explicitly.
+    \item \textbf{Memory Usage}: Proportional to the total number of elements, making it less memory-efficient for large matrices.
+    \item \textbf{Usage}: Common in datasets with uniformly distributed data or high correlation between variables.
+\end{itemize}
+
+\paragraph{Sparse Matrices}
+\begin{itemize}
+    \item \textbf{Definition}: A matrix is sparse if the number of non-zero elements is much smaller than the total number of elements.
+    \item \textbf{Storage}: Only non-zero elements are stored, often as a coordinate list containing triplets (row, column, value).
+    \item \textbf{Memory Usage}: Proportional to the number of non-zero elements, making it much more memory-efficient than dense matrices.
+    \item \textbf{Usage}: Common in high-dimensional datasets with many zero values, such as text data (e.g., word occurrence matrices) or recommendation systems.
+\end{itemize}
+
+
+\section{Distributed File Systems and MapReduce}
+Distributed file systems and the MapReduce programming model are foundational for handling large-scale data processing. They enable the distribution and parallel processing of vast amounts of data across multiple machines, providing scalability, fault tolerance, and efficiency.
+
+\subsection{Google File System (GFS)}
+GFS is a distributed file system designed for large-scale data processing with high fault tolerance. The key features of GFS include:
+
+\begin{itemize}
+    \item \textbf{Data Division and Replication}: Data is divided into fixed-size blocks (typically 64MB). Each block is replicated across multiple servers (usually three) to ensure data reliability and fault tolerance. This replication ensures that if one server fails, the data can still be accessed from other servers that hold copies.
+    
+    \item \textbf{Master and Chunk Servers}: GFS follows a master-slave architecture. The \textbf{Master server} manages metadata, such as the namespace, access control, and mapping of blocks to \textbf{Chunk Servers}. Chunk Servers store the actual data blocks.
+    
+    \item \textbf{Write-once, Append Model}: Files in GFS are primarily write-once, meaning that once written, they are not modified. Instead, new data can be appended. This model simplifies concurrency control and makes GFS particularly suitable for log-based applications.
+    
+    \item \textbf{Fault Tolerance and Recovery}: The Master server constantly monitors the status of Chunk Servers and maintains the required number of replicas. If a Chunk Server fails, the Master triggers the re-replication of its blocks to maintain fault tolerance.
+
+    \item \textbf{Optimized for Streaming Reads}: GFS is optimized for high-throughput streaming reads of large files rather than random access to small files, which aligns well with typical big data workloads.
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/GoogleFileSystem.png}
+    \caption{Google File System (GFS) Architecture}
+    \label{fig:gfs}
+\end{figure}
+
+\subsection{MapReduce Programming Model}
+MapReduce is a distributed programming model that enables large-scale data processing by breaking down the computation into smaller, independent tasks. The main components are:
+
+\begin{itemize}
+    \item \textbf{Map Phase}: The input dataset is split into independent chunks, and each chunk is processed by a \textbf{Map function}. The Map function processes the data and produces intermediate key-value pairs.
+    
+    \item \textbf{Shuffle and Sort}: After the Map phase, all intermediate key-value pairs are grouped by key. This process is called \textbf{Shuffle and Sort}, and it ensures that all values associated with the same key are brought together.
+    
+    \item \textbf{Reduce Phase}: The \textbf{Reduce function} processes the grouped data to produce the final output. The Reduce function aggregates the intermediate data, which often involves summation, concatenation, or filtering.
+
+    \item \textbf{Fault Tolerance}: If a node fails during the execution of a Map or Reduce task, the framework reassigns the task to another available node. This ensures that the system is resilient to hardware failures.
+
+    \item \textbf{Scalability}: MapReduce can easily scale by adding more machines to the cluster. This allows the processing power to increase linearly with the addition of new nodes.
+
+    \item \textbf{Locality Optimization}: The framework attempts to execute tasks on nodes where the data is stored, minimizing data transfer and reducing network congestion.
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/mapred.png}
+    \caption{Procedure}
+    \label{fig:gfs}
+\end{figure}
+
+
+The combination of GFS and MapReduce provides a powerful and resilient infrastructure for distributed data processing, with GFS managing storage and MapReduce handling computation.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/mapreduce.png}
+    \caption{MapReduce Programming Model Arthitecture}
+    \label{fig:gfs}
+\end{figure}
+
+
+\subsection{Example of MapReduce}
+All MapReduce contains these procedure: Mapping, Shuffling/Sorting, Reducing.
+\textbf{1. Word Count}
+In word count senario, we need to splitting all input (parallel computing), and then mapping all word with its appears(1). Then shuffling based on the key (words). And use Reducer to count its length(how many times appear).
+
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{images/map2wordcount.png}
+    \caption{MapReduce to word count}
+    \label{fig:gfs}
+\end{figure}
+
+\textbf{2. Reverse Web-Link Graph}
+Input: a file of web pages and the URLs that each one links to.
+Mapping: expense all key-value to injective relation.
+Shuffling: reverse the key and value.
+Reducing: Aggregate all same key (Previous value).
+
+\textbf{3. Term-Vector per Host}
+
+
+Input: The input data is stored in the format \texttt{(host, document\_id, term)}. For example:
+\[
+\texttt{
+\begin{tabular}{lll}
+host1, & doc1, & hello \\
+host1, & doc1, & world \\
+host1, & doc2, & hello \\
+host2, & doc3, & mapreduce \\
+host2, & doc3, & hello \\
+\end{tabular}}
+\]
+
+
+map: Operation:
+- Parse the record to extract \texttt{(host, term)}.
+- Emit key-value pairs \texttt{((host, term), 1)}.
+
+\textbf{Example Output:}
+\[
+\begin{aligned}
+&(\text{host1, hello}, 1) \\
+&(\text{host1, world}, 1) \\
+&(\text{host1, hello}, 1) \\
+&(\text{host2, mapreduce}, 1) \\
+&(\text{host2, hello}, 1)
+\end{aligned}
+\]
+
+Shuffle \& Sort Phase:
+- Group the output of the Map phase by the key \texttt{(host, term)}.
+- Aggregate all values for the same key.
+
+\textbf{Example Output:}
+\[
+\begin{aligned}
+&(\text{host1, hello}) \to [1, 1] \\
+&(\text{host1, world}) \to [1] \\
+&(\text{host2, mapreduce}) \to [1] \\
+&(\text{host2, hello}) \to [1]
+\end{aligned}
+\]
+
+Reducing:
+Input: \texttt{((host, term), [1, 1, ...])}
+
+\textbf{Operation:}
+- Sum the values in the list for each key \texttt{(host, term)}.
+- Aggregate term vectors by \texttt{host}.
+
+\textbf{Example Output:}
+\[
+\begin{aligned}
+&\text{host1} \to \{\text{hello: 2, world: 1}\} \\
+&\text{host2} \to \{\text{mapreduce: 1, hello: 1}\}
+\end{aligned}
+\]
+
+\textbf{4. Inverted Index}
+Input: file name and text.
+Mapping: based on the text word, span a map which key is the word in text, value is the file name.
+Shuffling: based on the key of this new map, aggregate all same keys.
+Reducing: Calculate the Union set of all values for every key.
+
+
+
+
+
+\section{Hadoop and HDFS}
+Hadoop is an open-source implementation that provides similar functionalities to GFS and MapReduce, allowing distributed storage and processing of large datasets. Hadoop consists of two main components: the Hadoop Distributed File System (HDFS) and the MapReduce processing framework.
+
+\subsection{HDFS Implementation Details}
+Hadoop clusters include several daemons (i.e., programs) that work together to maintain the Hadoop Distributed File System (HDFS). These include the NameNode, DataNodes, and the Secondary NameNode. Below are their roles and responsibilities:
+
+\subsubsection{NameNode}
+The NameNode is the central master server in HDFS, responsible for managing the file system metadata.
+
+\begin{itemize}
+    \item Runs on a unique master server.
+    \item Acts as the bookkeeper for HDFS.
+    \item Keeps track of where blocks constituting copies of each file are stored.
+    \item Monitors the health of the distributed file system.
+    \item It is a single point of failure for the cluster, so it is commonly deployed on a dedicated machine.
+\end{itemize}
+
+\textbf{Metadata Management}:
+\begin{itemize}
+    \item Stores the HDFS file system information in the FsImage.
+    \item \textbf{FsImage}: A file stored on the OS filesystem containing the complete directory structure (namespace) of HDFS. It details the location of data blocks and their corresponding nodes.
+    \item Updates to the file system (e.g., adding or removing blocks) are logged to a separate log file rather than modifying the FsImage directly.
+    \item On startup, the NameNode loads the FsImage file and applies changes from the log file to bring it up to date.
+\end{itemize}
+
+\subsubsection{DataNodes}
+The DataNodes are worker nodes in the HDFS architecture, responsible for actual data storage.
+
+\begin{itemize}
+    \item Runs on each worker node.
+    \item Stores the actual data blocks. Clients can upload files directly to the DataNodes.
+    \item Informs the NameNode of any local changes to files.
+    \item Periodically polls the NameNode for updates regarding block changes.
+\end{itemize}
+
+\subsubsection{Secondary NameNode}
+The Secondary NameNode assists the NameNode but does not serve as its backup.
+
+\begin{itemize}
+    \item Periodically reads the log file and applies changes to the FsImage file to keep it updated.
+    \item Helps minimize the impact of NameNode failure by ensuring that metadata snapshots are relatively recent.
+    \item Allows the NameNode to restart faster when required.
+\end{itemize}
+
+\subsection{Hadoop Distributed File System (HDFS)}
+HDFS is the storage layer of Hadoop, designed for storing very large files across multiple machines in a reliable and efficient manner. The key features of HDFS include:
+
+\begin{itemize}
+    \item \textbf{Block-based Storage}: Files in HDFS are split into large blocks (typically 128MB). Each block is replicated across multiple nodes (default is three replicas) to ensure data reliability and fault tolerance.
+    
+    \item \textbf{NameNode and DataNodes}: HDFS follows a master-slave architecture. The \textbf{NameNode} is the master server that maintains metadata about the file system, such as file names, block locations, and permissions. The \textbf{DataNodes} are worker nodes that store the actual data blocks.
+    
+    \item \textbf{Single Point of Failure}: The NameNode is a single point of failure in HDFS. To mitigate this, HDFS has a \textbf{Secondary NameNode}, which periodically takes snapshots of the NameNode's metadata to assist in faster recovery in case of failure.
+    
+    \item \textbf{Write-once, Read-many Model}: HDFS is optimized for workloads that involve reading large datasets rather than frequently modifying files. Once a file is written, it cannot be modified but can be read many times.
+    
+    \item \textbf{Data Integrity and Reliability}: DataNodes periodically send 	\textbf{heartbeats} to the NameNode to report their status. If a DataNode fails, the NameNode replicates the data blocks stored on that DataNode to other nodes to ensure no data loss. Heartbeats are also used to monitor the overall health of the cluster and ensure that all nodes are functioning correctly.
+
+    \item \textbf{Block Reports}: In addition to heartbeats, DataNodes send 	\textbf{block reports} to the NameNode periodically. These reports contain a list of all the blocks that a DataNode is storing, allowing the NameNode to maintain an accurate record of where each block is located.
+
+    \item \textbf{Optimized for Streaming Access}: Similar to GFS, HDFS is optimized for high-throughput streaming access rather than low-latency access to small files.
+    
+    \item \textbf{Rack Awareness}: HDFS is rack-aware, meaning it takes the physical location of nodes into account when replicating data. This ensures that replicas are stored across different racks, providing resilience against rack-level failures.
+\end{itemize}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1\textwidth]{images/HDFS_ARC.png}
+    \caption{HDFS Architecture}
+    \label{fig:hdfs}
+\end{figure}
+
+\subsection{Hadoop MapReduce}
+Hadoop MapReduce is the computation layer of Hadoop (written in Java), responsible for processing the data stored in HDFS. The components and their functions include:
+
+\begin{itemize}
+    \item \textbf{Mapper}: The \textbf{Mapper} reads the input data from HDFS, processes it, and outputs intermediate key-value pairs. \textbf{Each Mapper runs in parallel}, processing different blocks of the data to maximize throughput.
+    
+    \item \textbf{Shuffle and Sort}: After the Map phase, the framework performs a \textbf{shuffle} operation to group intermediate key-value pairs by key, followed by sorting them. This ensures that all values for a given key are passed to the appropriate Reducer.
+    
+    \item \textbf{Reducer}: The \textbf{Reducer} takes the grouped key-value pairs from the Shuffle phase and performs aggregation or other computations to produce the final output.
+
+    \item \textbf{JobTracker and TaskTrackers} (MapReduce v1): The \textbf{JobTracker} is responsible for managing resources and scheduling tasks, while \textbf{TaskTrackers} run on worker nodes to execute individual Map and Reduce tasks.
+    
+    \item \textbf{Resource Manager and Application Master} (MapReduce v2): In the newer version of MapReduce, the \textbf{Resource Manager} allocates resources across the cluster, and the \textbf{Application Master} handles the execution of each specific job, providing better scalability and fault tolerance.
+    
+    \item \textbf{Speculative Execution}: Hadoop MapReduce includes a feature called \textbf{speculative execution}, which runs multiple instances of the same task on different nodes. The first instance to complete successfully is used, which helps mitigate the impact of slow nodes (stragglers).
+    
+    \item \textbf{Data Locality}: Hadoop tries to assign tasks to nodes that contain the data to be processed, minimizing data transfer and enhancing efficiency.
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{images/Hadoop_MRA.png}
+    \caption{Hadoop MapReduce Architecture}
+    \label{fig:mapreduce}
+\end{figure}
+
+\section{Applications of MapReduce}
+MapReduce is versatile and can be applied to solve many large-scale data processing tasks. Some detailed examples include:
+
+\begin{itemize}
+    \item \textbf{Word Counting}: In the Map phase, each document is split into words, and for each word, the Mapper emits a key-value pair of the word and count (e.g., \texttt{(word, 1)}). In the Reduce phase, these counts are aggregated to determine the total frequency of each word across all documents.
+    
+    \item \textbf{Count of URL Access Frequency}: The Mapper processes logs of web page requests, emitting a key-value pair for each request (e.g., \texttt{(URL, 1)}). The Reducer then sums these values to get the total count of requests per URL.
+    
+    \item \textbf{Reverse Web-Link Graph}: The Mapper emits pairs indicating links between web pages (e.g., \texttt{(target URL, source URL)}). The Reducer concatenates the list of all source URLs that link to a given target URL, producing a reverse link graph.
+    
+    \item \textbf{Inverted Index}: The Mapper parses each document and emits key-value pairs for each word and the document ID (e.g., \texttt{(word, docID)}). The Reducer collects all document IDs associated with each word, creating an inverted index that maps words to the documents containing them.
+    
+    \item \textbf{Distributed Grep}: The Mapper scans each line of the input files and emits the line if it matches a given pattern. The Reducer is an identity function that simply outputs the lines emitted by the Mapper, effectively providing a distributed version of the \texttt{grep} command.
+    
+    \item \textbf{Sorting}: MapReduce can also be used for sorting large datasets. The Mapper assigns keys to each element, and the Reducer merges sorted key-value pairs to produce the final sorted output.
+    
+    \item \textbf{Join Operations}: MapReduce can perform join operations on large datasets, similar to SQL joins. The Mapper emits key-value pairs from both datasets based on the join key, and the Reducer merges records with the same key.
+\end{itemize}
+
+
+\section{Spark}
+\subsection{Intro}
+Developed as an improvement of Hadoop MapReduce. Works with any Hadoop-supported storage system (HDFS, S3, Avro, etc.), but not a modified version of Hadoop. Generally faster than Hadoop MapReduce: Spark can perform in-memory processing, faster than Hadoop on disk. Supports a broader set of computations than Hadoop. And APIs in Java, Scala, Python, and R.
+
+\subsection{Resilient Distributed Datasets (RDDs)}
+Resilient Distributed Datasets (RDDs) are the fundamental abstraction in Apache Spark for distributed data processing. They are immutable, distributed collections of items that can be operated on in parallel.
+
+\subsubsection*{Definition of RDDs}
+\begin{itemize}
+    \item \textbf{RDDs are immutable}: Once created, RDDs cannot be modified. Any transformation on an RDD results in a new RDD.
+    \item \textbf{Partitioned Data}: RDDs are split into partitions, which can be distributed across worker nodes in a Spark cluster.
+    \item \textbf{Resilient}: Each partition is stored on multiple nodes, providing fault tolerance.
+    \item \textbf{Distributed}: RDD partitions are distributed across the cluster nodes, enabling parallel computation.
+\end{itemize}
+
+\subsubsection*{RDD Partitions}
+\begin{itemize}
+    \item RDDs consist of multiple elements stored across partitions.
+    \item Each partition contains a subset of the data.
+    \item \textbf{Example}: 
+        \begin{itemize}
+            \item An RDD with 5 elements: \texttt{Welcome, To, Big, Data, Module}.
+            \item Split into 2 partitions:
+                \begin{itemize}
+                    \item Partition 1: \texttt{Welcome, To, Big} (3 elements).
+                    \item Partition 2: \texttt{Data, Module} (2 elements).
+                \end{itemize}
+        \end{itemize}
+\end{itemize}
+
+\subsubsection*{Immutability of RDDs}
+\begin{itemize}
+    \item RDDs are immutable, meaning that once created, they cannot be modified.
+    \item Every transformation on an RDD creates a new RDD.
+    \item \textbf{Example}:
+    \begin{verbatim}
+RDD1: input_file = sc.textFile("/usr/local/spark/input.txt")
+RDD2: map = input_file.flatMap(lambda line: line.split(" ")).map(lambda word: (word, 1))
+RDD3: counts = map.reduceByKey(lambda a, b: a + b)
+RDD4: counts.saveAsTextFile("/path/to/output/")
+    \end{verbatim}
+\end{itemize}
+
+\subsubsection*{Creating RDDs}
+There are two main ways to create RDDs:
+\begin{enumerate}
+    \item \textbf{Parallelizing an existing collection}:
+    \begin{itemize}
+        \item Python:
+        \begin{verbatim}
+wordsRDD = sc.parallelize(["fish", "cats", "dogs"])
+        \end{verbatim}
+        \item Scala:
+        \begin{verbatim}
+val wordsRDD = sc.parallelize(List("fish", "cats", "dogs"))
+        \end{verbatim}
+        \item Java:
+        \begin{verbatim}
+JavaRDD<String> wordsRDD = sc.parallelize(Arrays.asList("fish", "cats", "dogs"));
+        \end{verbatim}
+    \end{itemize}
+    \item \textbf{Reading from external storage}:
+    \begin{itemize}
+        \item Example in Python:
+        \begin{verbatim}
+input_file = sc.textFile("/usr/local/spark/input.txt")
+        \end{verbatim}
+    \end{itemize}
+\end{enumerate}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{images/ML_Framework.png}
+    \caption{ML Framework compare}
+    \label{fig:mapreduce}
+\end{figure}
+
+\subsection{Directed Acyclic Graphs (DAGs) and RDD Operations in Spark}
+
+\subsubsection{Directed Acyclic Graphs and Data Flows}
+\begin{itemize}
+    \item Spark uses a \textbf{Directed Acyclic Graph (DAG)} as the foundation for computation.
+    \item A DAG is a directed graph with no directed cycles.
+    \item A \textbf{data flow} is composed of data sources, operators, and data sinks, connected to manage inputs and outputs.
+\end{itemize}
+
+\subsubsection{DAGs in Spark and Lazy Evaluation}
+\begin{itemize}
+    \item In Spark, DAGs represent a sequence of computations performed on data.
+    \item Each \textbf{node} in the graph is an RDD.
+    \item Each \textbf{edge} in the graph is a transformation that creates a new RDD.
+    \item DAGs are evaluated \textbf{lazily}, meaning execution is deferred until an action is triggered.
+    \item Spark optimizes the execution plan by reordering and combining transformations, enabling efficient in-memory execution.
+    \item This optimization \textbf{explains why Spark is so much faster than Hadoop}.
+\end{itemize}
+
+\subsubsection{RDD Operations}
+Spark RDDs support two types of operations:
+\begin{enumerate}
+    \item \textbf{Transformations}:
+    \begin{itemize}
+        \item Transformations create a new RDD from an existing one.
+        \item These operations form the edges in the DAG.
+        \item Example: \texttt{x.map(f)} applies a function \( f \) to each element.
+    \end{itemize}
+    \item \textbf{Actions}:
+    \begin{itemize}
+        \item Actions compute a result based on an RDD.
+        \item Results can be returned to the driver program or written to external storage (e.g., HDFS).
+        \item Example: \texttt{x.saveAsTextFile(path)} writes RDD elements to a file.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Narrow vs Wide Transformations}
+\begin{itemize}
+    \item \textbf{Narrow Transformations}: Each partition of the parent RDD is used by at most one partition of the child RDD.
+    \begin{itemize}
+        \item Examples: \texttt{map}, \texttt{filter}, \texttt{union}.
+    \end{itemize}
+    \item \textbf{Wide Transformations (Shuffle)}: Multiple child RDD partitions depend on a single parent RDD partition.
+    \begin{itemize}
+        \item Examples: \texttt{groupByKey}, \texttt{joins} with no co-partitioning.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{RDD Operations in Spark}
+\textbf{RDD operations} can be grouped into the following categories:
+\begin{itemize}
+    \item \textbf{General Transformations}:
+    \texttt{map, filter, flatMap, groupBy, sortBy}.
+    \item \textbf{Math / Statistical}:
+    \texttt{sample, mean, sum, variance, histogram}.
+    \item \textbf{Set Theory / Relational}:
+    \texttt{union, intersection, subtract, cartesian, zip}.
+    \item \textbf{Data Structure / I/O}:
+    \texttt{keyBy, zipWithIndex, repartition, saveAsTextFile}.
+    \item \textbf{Actions}:
+    \texttt{reduce, collect, aggregate, saveAsTextFile}.
+\end{itemize}
+
+\subsubsection{Key Examples of Transformations and Actions}
+\begin{verbatim}
+input_file = sc.textFile("/usr/local/spark/input.txt")
+map = input_file.flatMap(lambda line: line.split(" ")).map(lambda word: (word, 1))
+counts = map.reduceByKey(lambda a, b: a + b)
+counts.saveAsTextFile("/path/to/output/")
+\end{verbatim}
+
+\subsubsection{Visual Examples}
+\begin{itemize}
+    \item \textbf{Narrow Transformations}: \texttt{map, filter} operate independently on partitions.
+    \item \textbf{Wide Transformations}: \texttt{groupByKey, join} require a shuffle across partitions.
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\linewidth]{images/2Types.png}
+    \caption{Transformation V.S. Action}
+    \label{fig:enter-label}
+\end{figure}
+
+
+\subsection{Key RDD Functions in Spark}
+
+\subsubsection*{map and flatMap}
+\begin{itemize}
+    \item \textbf{map}: Takes a function and applies it to each element in the RDD, creating a new RDD.
+    \begin{itemize}
+        \item Example:
+        \begin{verbatim}
+nums = sc.parallelize([232, 110, 489])
+big_no = nums.map(lambda x: x + 1)
+        \end{verbatim}
+        Result: \texttt{[233, 111, 490]}.
+    \end{itemize}
+    \item \textbf{flatMap}: Similar to \texttt{map}, but flattens the results into a single RDD.
+    \begin{itemize}
+        \item Example:
+        \begin{verbatim}
+lines.flatMap(lambda line: line.split()).collect()
+        \end{verbatim}
+        Result: \texttt{['Good', 'Morning', 'Day', ...]}.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection*{filter}
+\begin{itemize}
+    \item \textbf{filter}: Creates a new RDD by selecting elements that satisfy a given condition.
+    \begin{itemize}
+        \item Example:
+        \begin{verbatim}
+rdd6 = rdd5.filter(lambda x: 'a' in x[1])
+        \end{verbatim}
+        Filters elements where the value contains 'a'.
+    \end{itemize}
+\end{itemize}
+
+
+\begin{itemize}
+    \item \textbf{groupByKey}: Groups the data based on a key, producing an RDD of grouped data.
+    \begin{itemize}
+        \item Example:
+        \begin{verbatim}
+rdd.groupByKey().mapValues(list).collect()
+        \end{verbatim}
+        Result: Grouped values by key.
+    \end{itemize}
+    \item \textbf{groupBy}: Groups the data based on a user-provided function.
+    \begin{itemize}
+        \item Example:
+        \begin{verbatim}
+y = x.groupBy(lambda w: w[0])
+        \end{verbatim}
+        Groups based on the first character of each word.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection*{reduceByKey}
+\begin{itemize}
+    \item \textbf{reduceByKey}: Aggregates values for each key using an associative function.
+    \begin{itemize}
+        \item Example:
+        \begin{verbatim}
+rdd.reduceByKey(lambda a, b: a + b).collect()
+        \end{verbatim}
+        Result: Combined values with the same key.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection*{sortByKey}
+\begin{itemize}
+    \item \textbf{sortByKey}: Sorts elements in an RDD by their key.
+    \begin{itemize}
+        \item Example:
+        \begin{verbatim}
+y = x.sortByKey()
+        \end{verbatim}
+        Result: RDD sorted by key.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection*{union}
+\begin{itemize}
+    \item \textbf{union}: Returns the union of two RDDs.
+    \begin{itemize}
+        \item Example:
+        \begin{verbatim}
+z = x.union(y)
+        \end{verbatim}
+        Result: Combined data from both RDDs.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection*{join}
+\begin{itemize}
+    \item \textbf{join}: Performs an inner join between two RDDs based on the key.
+    \begin{itemize}
+        \item Example:
+        \begin{verbatim}
+z = x.join(y)
+        \end{verbatim}
+        Result: Returns pairs with matching keys.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection*{distinct}
+\begin{itemize}
+    \item \textbf{distinct}: Removes duplicate elements in an RDD.
+    \begin{itemize}
+        \item Example:
+        \begin{verbatim}
+y = x.distinct()
+        \end{verbatim}
+        Result: RDD with distinct values.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Actions in Spark RDD}
+
+Actions are operations that compute a result based on an RDD and return a value to the driver program or save it to external storage. Unlike transformations, actions do not return a new RDD.
+
+\subsubsection*{Key Actions and Their Descriptions}
+
+\begin{itemize}
+    \item \textbf{reduce:} Applies a binary operator to all elements in an RDD and reduces them to a single state.
+    \begin{itemize}
+        \item Example: Summing all elements in an RDD.
+        \item Note: \texttt{reduceByKey} is a transformation, not an action.
+    \end{itemize}
+    
+    \item \textbf{fold:} Similar to reduce but uses a neutral “zero value” for each partition, which is combined later.
+    
+    \item \textbf{collect:} Returns all elements of the RDD as a list to the driver program.
+    \begin{itemize}
+        \item \textbf{Warning:} Avoid using \texttt{collect} on large datasets, as it dumps the entire dataset into memory.
+    \end{itemize}
+    
+    \item \textbf{first:} Returns the first element of the RDD.
+    
+    \item \textbf{take(n):} Returns the first \texttt{n} elements from the RDD.
+    
+    \item \textbf{forEach(func):} Applies a function to all elements of the RDD for side effects (e.g., saving data to a database).
+    
+    \item \textbf{top(n):} Returns the top \texttt{n} elements from the RDD based on specified ordering.
+    
+    \item \textbf{count:} Returns the number of elements in the RDD.
+    
+    \item \textbf{takeSample(withReplacement, num, [seed]):} Returns a fixed-size sampled subset of the RDD.
+    
+    \item \textbf{max / min:} Returns the maximum or minimum element in the RDD.
+    
+    \item \textbf{sum:} Computes the sum of all elements in the RDD.
+    
+    \item \textbf{histogram(buckets):} Computes a histogram of elements, dividing them into specified buckets.
+    
+    \item \textbf{mean:} Returns the mean (average) of the dataset.
+    
+    \item \textbf{variance:} Computes the variance of the dataset.
+    
+    \item \textbf{stdev:} Computes the standard deviation of the dataset.
+\end{itemize}
+
+
+\subsection{DataFrames}
+DataFrames are distributed collections of rows organized into named columns.
+
+\begin{itemize}
+    \item \textbf{Similar to Excel tables or pandas DataFrames}: Offer a schema-based view of data.
+    \item \textbf{Build on top of RDDs}: They provide optimizations through Spark SQL’s Catalyst optimizer.
+    \item \textbf{Immutable in Nature}: Once created, a DataFrame cannot be changed, but can be transformed to produce new DataFrames.
+    \item \textbf{Lazy Evaluations}: Transformations are not executed until an action (like \texttt{show()}) is called.
+    \item \textbf{Distributed}: Like RDDs, DataFrames are distributed across the cluster.
+\end{itemize}
+
+\noindent\textbf{Creating a DataFrame in PySpark}:
+\begin{verbatim}
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.appName("PySpark Example").getOrCreate()
+
+data = [("Alice",25,"Data Scientist"),
+        ("Bob",30,"Software Engineer"),
+        ("Catherine",29,"Doctor")]
+
+columns = ["Name","Age","Occupation"]
+df = spark.createDataFrame(data, columns)
+df.show()
+\end{verbatim}
+
+\noindent\textbf{Other Ways to Create DataFrames}:
+\begin{itemize}
+    \item \textbf{Using different data formats}: Load data from JSON, CSV, RDBMS, XML, or Parquet.
+    \item \textbf{From an existing RDD}: Convert an RDD into a DataFrame by inferring a schema or providing one.
+    \item \textbf{Programmatically specifying a schema}: Define a schema explicitly and apply it to your data.
+\end{itemize}
+
+
+\subsection{Spark Computation}
+Spark’s computation model is based on:
+\begin{itemize}
+    \item \textbf{Task}: The smallest unit of work sent to an executor.
+    \item \textbf{Job}: A set of tasks triggered by an action.
+    \item \textbf{Stage}: A set of tasks that can be executed in parallel at the partition level, separated by shuffle boundaries.
+    \item \textbf{RDD (Resilient Distributed Dataset)}: A fault-tolerant collection of elements partitioned across the cluster.
+    \item \textbf{DAG (Directed Acyclic Graph)}: A logical graph of transformations and actions on RDDs.
+\end{itemize}
+
+\noindent\textbf{Job Scheduler}:
+\begin{itemize}
+    \item Transforms a logical execution plan (DAG) into a physical plan (stages and tasks).
+    \item The DAG Scheduler breaks down the DAG into stages.
+    \item The Task Scheduler assigns tasks to executors.
+\end{itemize}
+
+\noindent\textbf{RDD Stages}:
+\begin{itemize}
+    \item Each Spark stage will allocate executors as needed.
+    \item Stages group transformations and actions that can run together before a shuffle occurs.
+\end{itemize}
+
+
+\subsection{Spark Architecture}
+Spark’s architecture comprises a \textbf{driver} and multiple \textbf{executors}:
+
+\begin{itemize}
+    \item \textbf{Driver}:
+    \begin{itemize}
+        \item Runs the main program’s \texttt{main()} function.
+        \item Maintains information about the Spark application.
+        \item Schedules tasks, responds to user input, and distributes work to executors.
+    \end{itemize}
+
+    \item \textbf{Executors}:
+    \begin{itemize}
+        \item Run on the worker nodes.
+        \item Perform the data processing tasks assigned by the driver.
+        \item Read/write data from/to external sources.
+        \item Store computation results in-memory, on disk, or in cache.
+    \end{itemize}
+\end{itemize}
+
+
+\subsection{Spark Debugging \& Running Modes}
+\textbf{Spark Standalone Cluster and Local Modes}:
+\begin{itemize}
+    \item \textbf{Local mode}: Runs Spark using a single machine with one worker thread.
+    \item \textbf{Local[N]}: Runs Spark with N worker threads, like a thread pool.
+    \item \textbf{Local[*]}: Uses as many worker threads as there are logical cores on the machine.
+    \item Useful for testing, development, and small workloads on a single node.
+\end{itemize}
+
+\noindent\textbf{SparkContext Example in Local Mode}:
+\begin{verbatim}
+import pyspark
+sc = pyspark.SparkContext('local[4]')
+txt = sc.textFile('file:///usr/share/doc/python/copyright')
+python_lines = txt.filter(lambda line: 'python' in line.lower())
+print(python_lines.count())
+\end{verbatim}
+
+\begin{itemize}
+    \item The SparkContext is created with 4 worker threads.
+    \item \texttt{textFile()} reads the input file.
+    \item \texttt{filter()} selects lines containing "python".
+    \item \texttt{count()} returns the number of matching lines.
+\end{itemize}
+
+
+\end{document}
