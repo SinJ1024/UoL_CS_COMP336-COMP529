@@ -1,0 +1,452 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{example}{Example}
+\newtheorem{remark}{Remark}
+
+\title{\textbf{Linear Algebra Approaches and Algorithms for Data Analysis}}
+\author{Jingyuan Sun \\ ChatGPT \ Claude}
+
+\date{Dec, 2024}
+
+\begin{document}
+
+\maketitle
+
+\section{Linear Algebra Recap}
+\subsection{Eigenvalues and Eigenvectors}
+Let $A$ be an $n \times n$ matrix. The eigenvalues of $A$ are defined as the roots of:
+\begin{equation}
+\det(A - \lambda I) = 0,
+\end{equation}
+where $\lambda$ is an eigenvalue of $A$.
+
+For an eigenvalue $\lambda$, there exists a vector $\mathbf{x}$ such that:
+\begin{equation}
+A \mathbf{x} = \lambda \mathbf{x}.
+\end{equation}
+The vector $\mathbf{x}$ is called the eigenvector of $A$ corresponding to the eigenvalue $\lambda$.
+
+\subsection{Matrix Representation of Eigenvectors and Eigenvalues}
+Suppose $A$ is an $n \times n$ matrix with eigenvectors $\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_n$ and eigenvalues $\lambda_1, \lambda_2, \ldots, \lambda_n$. Then:
+\begin{equation}
+A \mathbf{x}_i = \lambda_i \mathbf{x}_i \quad \text{for } i = 1, \ldots, n.
+\end{equation}
+
+In matrix format:
+\begin{equation}
+A \mathbf{X} = \mathbf{X} \Lambda,
+\end{equation}
+where:
+\begin{equation}
+\mathbf{X} = \begin{bmatrix}
+\mathbf{x}_1 & \mathbf{x}_2 & \ldots & \mathbf{x}_n
+\end{bmatrix}, \quad
+\Lambda = \begin{bmatrix}
+\lambda_1 & 0 & \ldots & 0 \\
+0 & \lambda_2 & \ldots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \ldots & \lambda_n
+\end{bmatrix}.
+\end{equation}
+
+\subsection{Singular Value Decomposition (SVD)}
+The Singular Value Decomposition of a matrix $A \in \mathbb{R}^{m \times n}$ is given by:
+\begin{equation}
+A = U \Sigma V^T,
+\end{equation}
+where:
+\begin{itemize}
+    \item $U \in \mathbb{R}^{m \times m}$ is an orthogonal matrix ($U^T U = I$), containing the left singular vectors of $A$.
+    \item $\Sigma \in \mathbb{R}^{m \times n}$ is a diagonal matrix containing the singular values $\sigma_1, \sigma_2, \ldots$, with $\sigma_1 \geq \sigma_2 \geq \ldots \geq 0$.
+    \item $V \in \mathbb{R}^{n \times n}$ is an orthogonal matrix ($V^T V = I$), containing the right singular vectors of $A$.
+\end{itemize}
+
+The singular values $\sigma_i$ are the square roots of the eigenvalues of $A^T A$:
+\begin{equation}
+\sigma_i = \sqrt{\lambda_i(A^T A)}, \quad i = 1, \ldots, \min(m, n).
+\end{equation}
+
+\subsection{Relationship Between SVD and PCA}
+\begin{itemize}
+    \item For a covariance matrix $C = A^T A$, the eigenvalues $\lambda_i$ correspond to the squared singular values $\sigma_i^2$ of $A$.
+    \item The eigenvectors of $C$ are the right singular vectors of $A$.
+    \item In PCA, the principal components are obtained from the top singular values and their corresponding singular vectors.
+\end{itemize}
+
+\subsection{Properties of SVD}
+\begin{enumerate}
+    \item The rank of $A$ is equal to the number of non-zero singular values.
+    \item The Frobenius norm of $A$ is related to its singular values:
+    \begin{equation}
+    \|A\|_F = \sqrt{\sum_{i=1}^r \sigma_i^2},
+    \end{equation}
+    where $r = \text{rank}(A)$.
+    \item The 2-norm of $A$ is the largest singular value:
+    \begin{equation}
+    \|A\|_2 = \sigma_1.
+    \end{equation}
+\end{enumerate}
+
+\subsection{Applications of SVD}
+\begin{itemize}
+    \item \textbf{Dimensionality Reduction:} Use top $k$ singular values and corresponding singular vectors to approximate the matrix $A$:
+    \begin{equation}
+    A_k = U_k \Sigma_k V_k^T,
+    \end{equation}
+    where $U_k$ and $V_k$ contain the top $k$ singular vectors, and $\Sigma_k$ contains the top $k$ singular values.
+    \item \textbf{Data Compression:} Approximation $A_k$ requires less storage than $A$ while retaining most of the data's variance.
+    \item \textbf{Noise Reduction:} Low-rank approximations remove small singular values, effectively filtering noise.
+\end{itemize}
+
+\section{Principal Component Analysis}\label{sec:PCA}
+PCA is a linear transformation technique aiming to project data onto a lower-dimensional space that captures most of the variance. Let us start with the fundamental definitions and theorems.
+
+\subsection{Preliminaries}
+Consider a dataset $\{\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_n\}$ where each $\mathbf{x}_i \in \mathbb{R}^d$. We assume the data is mean-centered:
+\[
+\frac{1}{n}\sum_{i=1}^n \mathbf{x}_i = \mathbf{0}.
+\]
+If not, we can always shift the data by subtracting the sample mean.
+
+\begin{definition}[Covariance Matrix]
+Given mean-centered data $\{\mathbf{x}_1,\ldots,\mathbf{x}_n\}$, the sample covariance matrix $\mathbf{C}$ is defined as
+\[
+\mathbf{C} = \frac{1}{n}\sum_{i=1}^n \mathbf{x}_i \mathbf{x}_i^\top.
+\]
+This is a $d \times d$ symmetric and positive semi-definite matrix.
+\end{definition}
+
+\begin{remark}
+Intuitively, the covariance matrix captures how different dimensions vary with respect to each other. Its eigenstructure reveals directions of greatest variance.
+\end{remark}
+
+\subsection{Mathematical Formulation of PCA}
+PCA seeks a direction $\mathbf{w} \in \mathbb{R}^d$ that captures the maximum variance of the projected data. Formally:
+
+\begin{definition}[First Principal Component]
+The first principal component $\mathbf{w}_1$ is given by the solution to the optimization problem
+\[
+\max_{\mathbf{w} \in \mathbb{R}^d, \|\mathbf{w}\|=1} \mathbf{w}^\top \mathbf{C} \mathbf{w}.
+\]
+\end{definition}
+
+\begin{theorem}
+\label{thm:largest_eigenvector}
+The vector $\mathbf{w}_1$ that maximizes $\mathbf{w}^\top \mathbf{C} \mathbf{w}$ under the unit norm constraint is the eigenvector of $\mathbf{C}$ corresponding to its largest eigenvalue.
+\end{theorem}
+
+\begin{proof}
+Since $\mathbf{C}$ is symmetric and positive semi-definite, it can be eigen-decomposed as
+\[
+\mathbf{C} = \mathbf{V}\bm{\Lambda}\mathbf{V}^\top,
+\]
+where $\mathbf{V} = [\mathbf{v}_1, \mathbf{v}_2, \ldots, \mathbf{v}_d]$ is orthonormal and $\bm{\Lambda} = \mathrm{diag}(\lambda_1,\lambda_2,\ldots,\lambda_d)$ with $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_d \geq 0$. For any unit vector $\mathbf{w}$,
+\[
+\mathbf{w}^\top \mathbf{C}\mathbf{w} = \mathbf{w}^\top \mathbf{V}\bm{\Lambda}\mathbf{V}^\top \mathbf{w} = (\mathbf{V}^\top \mathbf{w})^\top \bm{\Lambda} (\mathbf{V}^\top \mathbf{w}).
+\]
+Let $\mathbf{u} = \mathbf{V}^\top \mathbf{w}$. Since $\mathbf{V}$ is orthonormal, $\|\mathbf{u}\|=1$. Thus,
+\[
+\mathbf{w}^\top \mathbf{C}\mathbf{w} = \sum_{i=1}^d \lambda_i u_i^2.
+\]
+This quadratic form is maximized when all of the weight is placed on the largest eigenvalue, i.e., $u_1 = 1$ and $u_2 = \cdots = u_d = 0$. This corresponds to $\mathbf{w} = \mathbf{v}_1$, the eigenvector of $\mathbf{C}$ with the largest eigenvalue $\lambda_1$.
+\end{proof}
+
+Subsequent principal components are defined similarly but under the constraint that they are orthogonal to the previously found components. The $k$-th principal component $\mathbf{w}_k$ is the eigenvector corresponding to the $k$-th largest eigenvalue $\lambda_k$.
+
+\subsection{Dimensionality Reduction via PCA}
+To reduce the dimension from $d$ to $r < d$, we select the top $r$ eigenvectors $\mathbf{w}_1,\ldots,\mathbf{w}_r$ and form a projection matrix:
+\[
+\mathbf{W}_r = [\mathbf{w}_1, \mathbf{w}_2, \ldots, \mathbf{w}_r].
+\]
+We then map each original data point $\mathbf{x}_i$ to a lower-dimensional vector
+\[
+\mathbf{y}_i = \mathbf{W}_r^\top \mathbf{x}_i.
+\]
+
+\begin{remark}
+This projection maximizes the variance in the $r$-dimensional subspace and often reveals simpler structures in the data, making subsequent tasks (like clustering or classification) easier or more efficient.
+\end{remark}
+
+\subsection{Example: PCA on Simple 2D Data}
+Consider a dataset in $\mathbb{R}^2$:
+\[
+\{\mathbf{x}_1,\mathbf{x}_2,\ldots,\mathbf{x}_n\}, \quad \mathbf{x}_i=\begin{pmatrix}x_{i1}\\x_{i2}\end{pmatrix}.
+\]
+If we compute the covariance matrix $\mathbf{C}$ and find its eigenvectors $\mathbf{v}_1$ and $\mathbf{v}_2$, projecting the data onto $\mathbf{v}_1$ (the direction of maximum variance) might reveal a linear trend. By then discarding $\mathbf{v}_2$, we reduce our data to one dimension while preserving as much information (variance) as possible.
+
+In practice, one might do the following steps:
+\begin{enumerate}
+    \item Mean-center the data: subtract the mean vector from each data point.
+    \item Compute the covariance matrix.
+    \item Find the eigen-decomposition of the covariance matrix.
+    \item Select the eigenvector(s) associated with the largest eigenvalue(s).
+    \item Project the data onto these eigenvectors to obtain a lower-dimensional representation.
+\end{enumerate}
+
+
+\section{Linear Algebra and Optimisation approaches to classification:}
+All optimization Note is contained in comp 331 Note.
+
+\subsection{Linear System Approaches}
+
+\textbf{Perfect Separation (\(\alpha = 0\)):}
+\begin{itemize}
+    \item Linear systems aim to find the best decision boundary \(A_i X^* = b\), where:
+    \begin{itemize}
+        \item \(A_i X^* < b\): Classifies as ``Bad''.
+        \item \(A_i X^* > b\): Classifies as ``Good''.
+    \end{itemize}
+    \item Example: If \(A_1X^* = 7.2\), it is classified as ``Bad'', whereas \(A_2X^* = 10.4\) is ``Good''.
+\end{itemize}
+
+\textbf{Overlapping Classification Boundaries (\(\alpha > 0\)):}
+\begin{itemize}
+    \item In cases of overlapping groups, the decision boundary shifts:
+    \begin{align*}
+        A_iX^* &= b + \alpha \quad \text{(Adjusted boundary for ``Good'')}, \\
+        A_iX^* &= b - \alpha \quad \text{(Adjusted boundary for ``Bad'')}.
+    \end{align*}
+    \item The adjustment ensures groups with overlaps are optimally separated based on predefined \(\alpha\) values.
+\end{itemize}
+
+\subsection{Multi-Criteria Linear Programming (MCLP)}
+
+\textbf{Three-Group MC Model:}
+\begin{itemize}
+    \item Extends binary classification to handle multiple groups (\(G_1, G_2, G_3\)), each defined by adjusted boundaries:
+    \begin{align*}
+        b_1 - \alpha^1 < A_iX &< b_1 + \alpha^1 \quad \text{(Group \(G_1\))}, \\
+        b_2 - \alpha^2 < A_iX &< b_2 + \alpha^2 \quad \text{(Group \(G_2\))}.
+    \end{align*}
+\end{itemize}
+
+\textbf{Key Parameters:}
+\begin{itemize}
+    \item \(\alpha_i\): Overlapping degree of group boundaries for a specific case (\textit{external measurement}).
+    \item \(\alpha\): Maximum overlapping across all groups.
+    \item \(\beta_i\): Distance of a case from its adjusted boundary (\textit{internal measurement}).
+    \item \(\beta\): Minimum distance of all cases to their respective adjusted boundaries.
+    \item \(h_i, k_i\): Penalties assigned for misclassification related to \(\alpha_i, \beta_i\).
+\end{itemize}
+
+\textbf{Optimization Problem:}
+\begin{itemize}
+    \item Minimize overlapping (\(\sum \alpha_i\)).
+    \item Maximize distance from boundaries (\(\sum \beta_i\)).
+    \item Subject to:
+    \begin{align*}
+        A_i X &= b + \alpha_i - \beta_i, \quad A_i \in G, \\
+        A_i X &= b - \alpha_i + \beta_i, \quad A_i \in B.
+    \end{align*}
+\end{itemize}
+
+\textbf{Regret Function:}
+\begin{itemize}
+    \item Measures deviation from ideal values (\(\alpha^*, \beta^*\)):
+    \begin{align*}
+        d_{\alpha}^+ &= \sum \alpha_i + \alpha^* - \alpha^*, \\
+        d_{\alpha}^- &= \alpha^* + \alpha_i - \sum \alpha_i, \\
+        d_{\beta}^+ &= \sum \beta_i - \beta^*, \\
+        d_{\beta}^- &= \beta^* - \sum \beta_i.
+    \end{align*}
+\end{itemize}
+
+\textbf{Objective:}
+\[
+\text{Minimize } (d_{\alpha}^+ + d_{\alpha}^-)^p + (d_{\beta}^+ + d_{\beta}^-)^p.
+\]
+
+\subsection{Algorithm for MCLP}
+
+\begin{enumerate}
+    \item Use \texttt{ReadCHD} to convert training and verifying data into a data matrix.
+    \item Use \texttt{GroupDef} to define groups \(G_1, G_2, \dots, G_s\).
+    \item Use \texttt{sGModel} to calculate the MCLP for the best \(s\)-group separation.
+    \item Evaluate training results using \texttt{Score}.
+    \item Predict classifications for verification data using \texttt{Predict}.
+\end{enumerate}
+
+\subsection{Multi-Criteria Non-Linear Programming (MCNLP)}
+
+\textbf{Model Setup:}
+\begin{itemize}
+    \item Extends MCLP to include non-linear adjustments.
+    \item Key variable: \(\zeta_{i,j}\), the distance from case \(A_i\) to boundary \(b_j\).
+    \item Objective:
+    \[
+    \text{Minimize } w_\alpha \sum_{i=1}^n \sum_{j=1}^k \alpha_{i,j} - w_\zeta \Bigg(\sum_{i=1}^n \sum_{j=1}^{k-1} \zeta_{i,j}\Bigg).
+    \]
+    \item Subject to:
+    \begin{align*}
+        A_i X &= b_j + \alpha_{i,j} - \zeta_{i,j}, \quad 1 \leq j \leq k.
+    \end{align*}
+\end{itemize}
+
+
+
+
+
+\section{Support Vector Machines (SVM)}
+Support Vector Machines (SVMs) are powerful supervised learning methods used for classification and regression. This section covers the primal and dual formulations of SVM, their limitations, and the kernel trick.
+
+\subsection{Primal Formulation of SVM}
+The primal formulation seeks to minimize the loss while maximizing the margin between two classes. Given training data $\{(\mathbf{x}_i, y_i)\}$, where $\mathbf{x}_i$ is the feature vector and $y_i \in \{-1, +1\}$, the goal is to find a hyperplane:
+\[
+\mathbf{w}^\top \mathbf{x} + b = 0
+\]
+that separates the two classes.
+
+\paragraph{Objective:}
+The primal problem minimizes:
+\[
+\min_{\mathbf{w}, b, \bm{\xi}} \frac{1}{2}\|\mathbf{w}\|^2 + C \sum_{i=1}^n \xi_i
+\]
+subject to:
+\[
+y_i (\mathbf{w}^\top \mathbf{x}_i + b) \geq 1 - \xi_i, \quad \xi_i \geq 0, \,\, \forall i.
+\]
+Here, $\xi_i$ are slack variables to allow for margin violations, and $C > 0$ is a regularization parameter.
+
+\subsection{Dual Formulation of SVM}
+The dual formulation converts the primal problem into a quadratic programming (QP) problem, which is more efficient and allows the use of kernel functions for non-linear separations.
+
+\paragraph{Objective:}
+The dual problem is:
+\[
+\max_{\alpha_i} \sum_{i=1}^n \alpha_i - \frac{1}{2} \sum_{i=1}^n \sum_{j=1}^n \alpha_i \alpha_j y_i y_j (\mathbf{x}_i^\top \mathbf{x}_j)
+\]
+subject to:
+\[
+0 \leq \alpha_i \leq C, \quad \sum_{i=1}^n \alpha_i y_i = 0.
+\]
+
+\subsection{Limitations of Linear SVMs}
+Linear SVMs aim to find a hyperplane for separation. However:
+\begin{itemize}
+    \item \textbf{Challenges in Non-Linear Data:} Not all datasets are linearly separable in the original feature space.
+    \item \textbf{Example:} A circularly distributed dataset where classes are enclosed within one another cannot be separated by a straight hyperplane.
+    \item \textbf{Need for Higher Dimensions:} Mapping data to a higher-dimensional space can enable separation using a hyperplane.
+\end{itemize}
+
+\subsection{Kernel Trick}
+The kernel trick addresses the limitation of non-linear separability by computing the dot product of transformed features in a high-dimensional space.
+
+\paragraph{Idea:}
+Instead of explicitly transforming data into higher dimensions, the kernel function $K(\mathbf{x}_i, \mathbf{x}_j)$ computes:
+\[
+K(\mathbf{x}_i, \mathbf{x}_j) = \phi(\mathbf{x}_i)^\top \phi(\mathbf{x}_j),
+\]
+where $\phi$ is a mapping to a higher-dimensional space.
+
+\paragraph{Decision Function:}
+The decision function in the dual form depends on the dot product:
+\[
+f(\mathbf{x}) = \sum_{i} \alpha_i y_i K(\mathbf{x}_i, \mathbf{x}),
+\]
+where $K(\mathbf{x}_i, \mathbf{x})$ is the kernel function.
+
+\subsection{Applications of SVM}
+Support Vector Machines are widely used in:
+\begin{itemize}
+    \item Text categorization and image classification.
+    \item Bioinformatics for protein structure prediction.
+    \item Financial forecasting for stock market trends.
+\end{itemize}
+
+
+\subsection{Hard-Margin SVM: The Linearly Separable Case}
+Consider a labeled dataset $\{(\mathbf{x}_i,y_i)\}_{i=1}^n$ where $\mathbf{x}_i \in \mathbb{R}^d$ and $y_i \in \{-1,+1\}$. Assume the data is linearly separable, meaning there exists a hyperplane that can perfectly separate the two classes:
+\[
+\mathbf{w}^\top \mathbf{x} + b = 0,
+\]
+with no misclassifications.
+
+\begin{definition}[Functional Margin]
+For a hyperplane parameterized by $(\mathbf{w},b)$, the functional margin of a data point $(\mathbf{x}_i,y_i)$ is defined as
+\[
+\hat{\gamma}_i = y_i(\mathbf{w}^\top \mathbf{x}_i + b).
+\]
+The functional margin of the entire dataset is the minimum margin over all points:
+\[
+\hat{\gamma} = \min_{i} \hat{\gamma}_i.
+\]
+\end{definition}
+
+\begin{definition}[Geometric Margin]
+The geometric margin, which is scale-invariant, is defined as
+\[
+\gamma = \min_{i} y_i\left(\frac{\mathbf{w}}{\|\mathbf{w}\|}^\top \mathbf{x}_i + \frac{b}{\|\mathbf{w}\|}\right).
+\]
+This measures the distance from the closest point to the hyperplane $(\mathbf{w},b)$.
+\end{definition}
+
+\begin{theorem}[SVM Maximum Margin Classifier]
+Among all hyperplanes that can separate the data, the one that maximizes the geometric margin is unique. This hyperplane can be found by solving:
+\[
+\min_{\mathbf{w},b} \frac{1}{2}\|\mathbf{w}\|^2 \quad \text{subject to} \quad y_i(\mathbf{w}^\top \mathbf{x}_i + b) \ge 1 \,\, \forall i.
+\]
+\end{theorem}
+
+\begin{proof}[Proof Sketch]
+To eliminate scale dependence, the constraints are fixed as $y_i(\mathbf{w}^\top \mathbf{x}_i + b) \ge 1$. Maximizing the geometric margin $\gamma = \frac{1}{\|\mathbf{w}\|}$ is equivalent to minimizing $\|\mathbf{w}\|^2$. The convex optimization problem has a unique solution due to strict convexity. The complete proof utilizes Lagrangian duality and the Karush-Kuhn-Tucker (KKT) conditions, showing a unique global minimum.
+\end{proof}
+
+\subsection{Soft-Margin SVM: The Non-separable Case}
+Real-world data is often not perfectly separable. We introduce slack variables $\xi_i \ge 0$ to allow margin violations:
+\[
+y_i(\mathbf{w}^\top \mathbf{x}_i + b) \ge 1 - \xi_i, \quad \xi_i \ge 0.
+\]
+
+The optimization problem becomes
+\[
+\min_{\mathbf{w},b,\bm{\xi}} \frac{1}{2}\|\mathbf{w}\|^2 + C\sum_{i=1}^n \xi_i \quad \text{subject to}\quad y_i(\mathbf{w}^\top \mathbf{x}_i + b) \ge 1 - \xi_i, \quad \xi_i \ge 0,
+\]
+where $C > 0$ is a penalty parameter balancing margin size and misclassification.
+
+\subsection{Kernels for Nonlinear Boundaries}
+If the data is not linearly separable in the original space, SVM can still find a linear separator in a high-dimensional feature space induced by a kernel function $K(\mathbf{x}_i,\mathbf{x}_j)$, where
+\[
+K(\mathbf{x}_i,\mathbf{x}_j) = \phi(\mathbf{x}_i)^\top \phi(\mathbf{x}_j)
+\]
+for some mapping $\phi: \mathbb{R}^d \to \mathbb{R}^{D}$ (often $D \gg d$). This approach allows constructing nonlinear decision boundaries without explicitly computing the mapping $\phi$.
+
+
+
+
+
+\subsection{Example: A Simple Linearly Separable Classification Task}
+Suppose we have a dataset in $\mathbb{R}^2$:
+\[
+\{(\mathbf{x}_i,y_i)\}_{i=1}^n, \quad \mathbf{x}_i=\begin{pmatrix}x_{i1}\\x_{i2}\end{pmatrix}, \, y_i \in \{-1,+1\},
+\]
+and assume it is linearly separable. The steps to train a hard-margin SVM are:
+\begin{enumerate}
+    \item Set up the optimization problem with constraints $y_i(\mathbf{w}^\top \mathbf{x}_i + b) \ge 1$.
+    \item Solve for $\mathbf{w}$ and $b$ using quadratic programming methods.
+    \item Identify the support vectors: points that lie exactly on the margins $y_i(\mathbf{w}^\top \mathbf{x}_i + b)=1$.
+    \item Use the resulting model $(\mathbf{w},b)$ to classify new points by evaluating the sign of $(\mathbf{w}^\top \mathbf{x} + b)$.
+\end{enumerate}
+
+If the data were not linearly separable, you would introduce slack variables and possibly use a kernel function for a nonlinear decision boundary.
+
+
+
+
+
+
+
+
+
+\end{document}
