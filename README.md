@@ -36,7 +36,7 @@ This module is about:
 
 • Exam examples on CANVAS
 
-If you think this repo is valuable, PLZ star it. It's one of my motivates to update the note ^_^
+If you think this repo is valuable, PLZ star it. It's one of my motivations to update the note ^_^
 
 -------------------------
 
